@@ -1,0 +1,47 @@
+#!/bin/bash
+
+#shopt -s nocasematch
+shopt -s extglob
+set -u
+#set -e
+
+# shellcheck disable=SC2086
+: ${PROG_PREFIX:=BSF}
+# shellcheck disable=SC2086
+: ${BSF_DATAPATH:=.} # TODO dynamic ???
+# shellcheck disable=SC2086
+: ${BSF_OPTIONS:=}
+: ${COLUMNS:=$(tput cols)}
+: ${LINES:=$(tput lines)}
+
+function main {
+
+  local datapath_var options_var
+  datapath_var="${PROG_PREFIX}_DATAPATH"
+  options_var="${PROG_PREFIX}_OPTIONS"
+
+  # include variables
+  # shellcheck source=incl/vars
+  source "${!datapath_var}/incl/vars"
+
+  # include functions
+  # shellcheck source=incl/func
+  source "${!datapath_var}/incl/func"
+
+  # include options processing
+  # shellcheck source=incl/options
+  source "${!datapath_var}/incl/options"
+
+  # include constants
+  # shellcheck source=incl/consts
+  source "${!datapath_var}/incl/consts"
+
+  # trap "do some clean;" INT TERM EXIT
+
+  # silent if not verbose
+  [ $verbose -eq 0 ] && stdout_silent
+
+  # code
+}
+
+main "$@"

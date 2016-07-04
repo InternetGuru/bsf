@@ -1,0 +1,133 @@
+#!/bin/bash
+
+function validate_nubmer {
+  [[ $1 =~ ^[1-9][0-9]*$ ]] \
+    || err "'$1' is not a valid positive number"
+}
+
+function msg_start {
+  stdout_verbose
+  if stdoutpipe || [[ $COLUMNS -lt 41 ]]; then
+    echo "$1"
+    stdout_silent
+    return 0
+  fi
+  echo -n "[ "
+  save_cursor_position
+  echo " ....  ] $1"
+  stdout_silent
+}
+
+function msg_end {
+  stdout_verbose
+  if stdoutpipe || [[ $COLUMNS -lt 41 ]]; then
+    echo "[ $1 ]"
+    stdout_silent
+    return 0
+  fi
+  set_cursor_position
+  echo "$1"
+  stdout_silent
+}
+
+function stdout_silent {
+  [[ $verbose == 0 ]] && exec 5<&1 && exec 1>/dev/null
+  return 0
+}
+
+function stdout_verbose {
+  [[ $verbose == 0 ]] && exec 1<&5
+  return 0
+}
+
+function err {
+  echo "$(basename "${0}")[error]: $*" >&2
+  return 1
+}
+
+function setcolor {
+  local c
+  c=${1:-always}
+  case $c in
+    always|never|auto)
+      color=$c
+      return 0
+    ;;
+  esac
+  return 2
+}
+
+function stdoutpipe {
+  readlink /proc/$$/fd/1 | grep -q "^pipe:"
+}
+
+function colorize {
+  [[ $color == never ]] && echo -n "$1" && return
+  [[ $color == auto ]] && stdoutpipe && echo -n "$1" && return
+  local c
+  c="${2:-$GREEN}"
+  tput setaf "$c"
+  echo -n "$1"
+  tput sgr0
+}
+
+function clear_stdin {
+  while read -r -t 0; do read -r; done
+}
+
+function save_cursor_position {
+  local curpos
+  curpos="1;1"
+  echo -en "\033[6n" >/dev/tty
+  # shellcheck disable=SC2162
+  read -d"R" curpos </dev/tty
+  pos_x=$( echo "${curpos#??}" | cut -d";" -f1 )
+  pos_y=$( echo "${curpos#??}" | cut -d";" -f2 )
+}
+
+function set_cursor_position {
+  [[ "$pos_x" == "$LINES" ]] && : $(( pos_x-- ))
+  tput cup $(( pos_x-1 )) $(( pos_y-1 ))
+}
+
+function confirm {
+  if [[ $is_stdin == 0 ]]; then
+    stdout_verbose
+    echo -n "${1:-"Are you sure?"} [YES/No] "
+    save_cursor_position
+    clear_stdin
+    read -r
+    [[ -z "$REPLY" ]] && set_cursor_position && echo "yes"
+    stdout_silent
+  else
+    read -r
+  fi
+  [[ "$REPLY" =~ ^y(es)?$ || -z "$REPLY" ]] && return 0
+  [[ "$REPLY" =~ ^no?$ ]] && return 1
+  confirm "Type"
+}
+
+function usage {
+  local usage_file shift_left
+  usage_file="${!datapath_var}/${script_name}.usage"
+  [ -f "$usage_file" ] \
+    || err "Usage file not found" \
+    || return 1
+  head -n1 "$usage_file"
+  echo
+  shift_left=0
+  # shellcheck disable=SC2004
+  [[ $COLUMNS -gt 1 ]] && shift_left=5 && export MANWIDTH=$((COLUMNS+$shift_left))
+  # shellcheck disable=SC2005
+  echo "$(tail -n+2 "$usage_file")" | man --nj --nh -l - | sed "1,2d;/^[[:space:]]*$/d;\$d;s/^ \{$shift_left\}//"
+}
+
+function version {
+  local ver
+  ver="$${PROG_PREFIX}_DATAPATH/VERSION"
+  [ -f "$ver" ] \
+    || err "Version file not found" \
+    || return 1
+  echo -n "GNU butt "
+  cat "$ver"
+}

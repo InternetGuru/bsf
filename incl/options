@@ -1,0 +1,27 @@
+#!/bin/bash
+
+
+# process options
+# shellcheck disable=SC2086
+# shellcheck disable=SC2048
+if ! line=$(
+  IFS=" " getopt -n "$0" \
+         -o hl:s:vVw:\? \
+         -l color::,colour::,help,verbose,version \
+         -- ${!options_var} $*
+)
+then usage; return 2; fi
+eval set -- "$line"
+
+# load user options
+while [ $# -gt 0 ]; do
+  case $1 in
+    --color|--colour) shift; setcolor "$1" || { usage; return 2; }; shift ;;
+    -h|-\?|--help) usage; return $? ;;
+    -v|--verbose) verbose=1; shift ;;
+    -V|--version) version; return $? ;;
+    --) shift; break ;;
+    *-) err "Unrecognized option '$1'"; usage; return 2 ;;
+    *) break ;;
+  esac
+done

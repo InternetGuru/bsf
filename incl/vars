@@ -1,0 +1,12 @@
+#!/bin/bash
+
+local line script_name pos_x pos_y is_stdin verbose
+
+script_name="bsf"
+color=auto
+pos_x=1
+pos_y=1
+[ -t 0 ]
+is_stdin=$?
+
+verbose=0
