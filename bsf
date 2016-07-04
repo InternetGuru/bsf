@@ -1,47 +1,63 @@
 #!/bin/bash
 
-#shopt -s nocasematch
+# --- Bash script options ---
+
+# shopt -s nocasematch
 shopt -s extglob
 set -u
-#set -e
+# set -e
 
+
+# --- User Customizable Global Variables ---
+# eg. BSF_OPTIONS="-v" ./bsf
+
+# global variables prefix
 # shellcheck disable=SC2086
 : ${PROG_PREFIX:=BSF}
+
+# data location
 # shellcheck disable=SC2086
 : ${BSF_DATAPATH:=.} # TODO dynamic ???
+
+# default options
 # shellcheck disable=SC2086
 : ${BSF_OPTIONS:=}
+
+# get term columns and lines
 : ${COLUMNS:=$(tput cols)}
 : ${LINES:=$(tput lines)}
 
+
+# --- Main Function ---
 function main {
 
   local datapath_var options_var
   datapath_var="${PROG_PREFIX}_DATAPATH"
   options_var="${PROG_PREFIX}_OPTIONS"
 
-  # include variables
+  # --- Variables ---
   # shellcheck source=incl/vars
   source "${!datapath_var}/incl/vars"
-
-  # include functions
+  # --- Functions ---
   # shellcheck source=incl/func
   source "${!datapath_var}/incl/func"
-
-  # include options processing
+  # --- Options Processing ---
   # shellcheck source=incl/options
   source "${!datapath_var}/incl/options"
-
-  # include constants
+  # --- Constants ---
   # shellcheck source=incl/consts
   source "${!datapath_var}/incl/consts"
-
-  # trap "do some clean;" INT TERM EXIT
-
-  # silent if not verbose
+  # --- Cleanup after terminate or exit ---
+  # trap "echo cleaning;" INT TERM EXIT
+  # --- Silent Mode ---
   [ $verbose -eq 0 ] && stdout_silent
 
-  # code
+  # --- Code ---
+  msg_start "Example of status message"
+  sleep 0.5
+  msg_end "$DONE"
+
+  confirm "Example of confirm"
 }
 
 main "$@"

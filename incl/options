@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 # process options
 # shellcheck disable=SC2086
 # shellcheck disable=SC2048
